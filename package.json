@@ -1,0 +1,20 @@
+{
+  "name": "socket-io-server",
+  "version": "0.1.0",
+  "private": true,
+  "dependencies": {
+    "axios": "^0.18.0",
+    "express": "^4.15.3",
+    "react": "^16.3.2",
+    "react-dom": "^16.3.2",
+    "react-scripts": "1.1.4",
+    "socket.io": "^2.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test --env=jsdom",
+    "eject": "react-scripts eject",
+    "deploy": "restdb-cli --cmd upload --src ./build --dest /reactrealtime  --database demo103-b600 --apikey 95a4e57256eb5f4f7544eff9dbf4031da1f64"
+  }
+}
