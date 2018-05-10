@@ -1,58 +1,67 @@
-import React, {Component} from 'react'
-
-import axios from 'axios';
+import React from 'react'
+import axios from 'axios'
 import io from 'socket.io-client'
 
+
 const CRYPTOCOMPARE_API = "https://streamer.cryptocompare.com/"
-const COINMARKET_API = "https://api.coinmarketcap.com/v1/ticker/"
 
-class Ticker extends Component {
+// const COINMARKET_API = "https://api.coinmarketcap.com/v1/ticker/"
+const COINMARKET_API = "https://koinex.in/api/ticker"
 
-    constructor(props) {
-        super(props)
+
+class Ticker extends React.Component {
+
+    constructor() {
+        super()
         this.state = {
-            Coins: {}
+            coins: []
+
         }
     }
 
-    componentDidMount = () => {
-        this.getAllCoins();
+    componentWillMount() {
+        this.getAllCoins()
     }
 
     getAllCoins = () => {
-        axios.get(COINMARKET_API).then(result => {
+        // Get all available coins from CoinMarketCap API.
+        axios.get(COINMARKET_API).then((response) => {
+            if (response.status === 200) {
 
-            if (result.status === 200) {
-                let Coins = {}
-                result.data.map((coin) => {
-                    Coins[coin.symbol] = coin
+                const myObject = response.data.stats.inr
+
+                var arr = [];
+
+                for (var key in myObject) {
+                    arr.push(myObject[key]);
+                }
+
+                // console.log(arr)
+
+                let coins = {}
+                arr.map((coin) => {
+                    coins[coin.currency_short_form] = coin
                     return null
-
                 })
-                this.setState({Coins})
-                this.subscribeCryptoStream();
+
+                this.setState({"coins": coins})
+                this.subscribeCryptoStream()
             }
-
         })
-            .catch(function (error) {
-                console.log(error);
-            });
-
     }
 
-
     subscribeCryptoStream = () => {
+        // Subscribe to CryptoCompare websocket API.
+
         let subs = []
         let cryptoIO = io.connect(CRYPTOCOMPARE_API)
 
-
-        Object.keys(this.state.Coins).map((key) => {
+        Object.keys(this.state.coins).map((key) => {
             subs.push("5~CCCAGG~" + key + "~USD")
             return null
         })
 
         cryptoIO.emit("SubAdd", {"subs": subs})
-
         cryptoIO.on("m", (message) => {
             this.updateCoin(message)
         })
@@ -107,29 +116,64 @@ class Ticker extends Component {
         }
     }
 
+
     render() {
-
+        // console.log(this.state)
         return (
-            <React.Fragment>
+            <div>
                 <div className="container-fluid">
-                    <div className="row">
-                        {Object.keys(this.state.Coins).map((key, index) => {
+                    <div className="row mt-5">
 
-                            let coin = this.state.Coins[key]
-                            return (
-                                <div key={ index } className="col-4 col-sm-3 col-xl-2 p-0">
-                                    <div className={"stock " + this.getTickStyle(coin) }>
-                                        <p className="text-white m-0">{ coin.symbol }</p>
-                                        <p className="text-white m-0">{ coin.price_usd }</p>
-                                    </div>
-                                </div>
-                            )
-                        })}
+
+                        <table className="table table-bordered table-hover mt-5">
+                            <thead>
+                            <tr>
+                                <th>ASSETS</th>
+                                <th>LAST PRICE (INR)</th>
+                                <th>LOWEST ASK (INR)</th>
+                                <th>HIGHEST BID(INR)</th>
+                                <th>CHANGE (24 H)</th>
+                                <th>VOLUME (24 H)</th>
+                            </tr>
+                            </thead>
+
+                            <tbody>
+
+                            {
+                                Object.keys(this.state.coins).map((key, index) => {
+                                    let coin = this.state.coins[key]
+
+                                    // console.log(coin.max_24hrs - coin.max_24hrs)
+
+                                    const a = parseInt(coin.max_24hrs)
+                                    const b = parseInt(coin.min_24hrs)
+                                    const total = ( a - b) / 100
+                                    console.log(a, '+', b, '+', total)
+
+
+                                    return (
+                                        <tr key={ index }>
+                                            <td>{ coin.currency_full_form }</td>
+                                            <td className={"stock " + this.getTickStyle(coin) }>{coin.last_traded_price}</td>
+                                            <td>{coin.lowest_ask}</td>
+                                            <td>{coin.highest_bid}</td>
+                                            <td></td>
+                                            <td>{coin.vol_24hrs}</td>
+                                        </tr>
+
+                                    )
+                                })
+                            }
+
+
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </React.Fragment>
+            </div>
         )
     }
 }
 
-export  default Ticker
+
+export default Ticker
